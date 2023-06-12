@@ -1,0 +1,216 @@
+---
+title: "Cyclistic_case_study"
+author: "Me"
+date: "2023-06-12"
+output: html_document
+---
+
+## Introdution
+
+For the capstone project of the Google Data Analytics certificate, I have chosen the Cyclistic bike share data to work on. For the case study, I will perform real-world tasks of a junior data analyst for the marketing team at Cyclistic, a fictional bike-share company in Chicago.
+To answer key business questions, I will follow the six steps of the data analysis process : Ask, Prepare, Process, Analyze, Share and Act.
+
+## The scenario
+
+The director of marketing of Cyclistic, Lily Moreno, believes that the company’s future growth depends on maximizing the number of annual memberships. Hence, the marketing analyst team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights, the analytics team could be able to design a new marketing strategy to convert casual riders into annual members. 
+
+Three questions will guide the future marketing campaign:
+
+1.How do annual members and casual riders use Cyclistic bikes differently?
+
+2.Why would casual riders buy Cyclistic annual memberships?
+
+3.How can Cyclistic use digital media to influence casual riders to become members?
+
+I have been assigned by Moreno the first question. 
+
+## The Ask phase
+
+* A statement of the business task: 
+
+Cyclistic has concluded that annual members are much more profitable than casual riders. So, we want to design a marketing strategies and a campaign that helps us converting casual riders into annual members. 
+
+* My key stakeholders are: 
+
+1-Lily Moreno: The director of marketing and my manager. Moreno has initiated   this  strategy. The first stakeholder to deliver to. 
+
+2-The executive team: For Moreno´s idea to work, the executive team must approve our recommendations, so so they must be backed up with compelling data insights and professional data visualizations.
+
+## The Prepare phase
+
+Data Source: 
+Past 12 month of original bike share data set from 07/2021 to 06/2022 was extracted as 12 zipped .csv [files](https://divvy-tripdata.s3.amazonaws.com/index.html). The data is made available and licensed by Motivate International Inc under this [license](https://ride.divvybikes.com/data-license-agreement).
+
+Data Organization & Description:
+
+File naming convention: YYYY_MM
+
+File Type:  csv  format 
+
+File Content: Each csv file consist of 13 columns which contain information related to ride id, rider type, ride start and end time, start and end location  etc. Number of rows varies between 49k to 531k from different excel files.
+
+Data credibility: 
+
+The data set is reliable, the data is complete and accurate for the chosen time window.
+
+The data is original, it is a first arty information.
+
+The data is comprehensive, the data set contains all information needed to answer the question.
+
+The data is current, rider data of the last 12 months was used.
+
+The data is cited and vetted by Chicago department of transportation.
+
+Data Security: Riders’ personal identifiable information is hidden through tokenization.
+
+Original files are backed up in a separate folder.
+
+Data Limitations: As riders’ personal identifiable information is hidden, thus will not be able to connect pass purchases to credit cards numbers to determine if casual riders live in the Cyclistic service area or if they have purchased multiple single passes.
+
+## The Process Phase
+
+I used R for data verification and cleaning: Reasons:
+The 12 data sets combined will contain more than 5 million rows of data. Excel worksheet limitation is 1,048,576 rows. Moreover, some csv files could not uploaded to BigQuery for file size problems. Thus, R is used to perform all tasks from organizing, cleaning analyzing and visualizing data.
+
+##installing libraries
+
+You need to install necessary libraries
+
+```{r library, echo=FALSE}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(skimr)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+##reading data sets
+
+```{r reading data, echo=FALSE}
+ds_01<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2021-07.csv")
+ds_02<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2021-08.csv")
+ds_03<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2021-09.csv")
+ds_04<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2021-10.csv")
+ds_05<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2021-11.csv")
+ds_06<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2021-12.csv")
+ds_07<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2022-01.csv")
+ds_08<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2022-02.csv")
+ds_09<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2022-03.csv")
+ds_10<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2022-04.csv")
+ds_11<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2022-05.csv")
+ds_12<-read.csv("C:/Users/kkdhi/Downloads/CASE_STUDY_1/.csv/2022-06.csv")
+```
+
+##checking column names
+
+```{r checking colnames,echo=FALSE}
+colnames(ds_01)
+colnames(ds_02)
+colnames(ds_03)
+colnames(ds_04)
+colnames(ds_05)
+colnames(ds_06)
+colnames(ds_07)
+colnames(ds_08)
+colnames(ds_09)
+colnames(ds_10)
+colnames(ds_11)
+colnames(ds_12)
+```
+
+#making sure that the the columns have the same type
+
+```{r check cols types,echo=FALSE}
+compare_df_cols(ds_01,ds_02,ds_03,ds_04,ds_05,ds_06,
+                ds_07,ds_08,ds_09,ds_10,ds_11,ds_12,return = "mismatch")
+```
+
+#combining data sets
+
+```{r bind data,echo=FALSE}
+bike_rides<-rbind(ds_01,ds_02,ds_03,ds_04,ds_05,ds_06,
+                  ds_07,ds_08,ds_09,ds_10,ds_11,ds_12)
+dim(bike_rides)
+```
+
+#removing empty rows
+
+```{r remove empty rowa,echo=FALSE}
+bike_rides<-janitor::remove_empty(bike_rides,which = c("cols"))
+bike_rides<-janitor::remove_empty(bike_rides,which = c("rows"))
+dim(bike_rides)
+```
+
+#summary
+
+```{r summary,echo=FALSE}
+skim_without_charts(bike_rides)
+```
+
+#processing datetime
+
+```{r datetime,echo=FALSE}
+bike_rides$started_at<-lubridate::ymd_hms(bike_rides$started_at)
+bike_rides$ended_at<-lubridate::ymd_hms(bike_rides$ended_at)
+```
+
+#creating start and end hour fields
+
+```{r start and end hour,echo=FALSE}
+bike_rides$start_hour<-lubridate::hour(bike_rides$started_at)
+bike_rides$end_hour<-lubridate::hour(bike_rides$ended_at)
+```
+
+#creating ride_length field
+
+```{r ride_length,echo=FALSE}
+bike_rides$ride_length_hour<-difftime(bike_rides$ended_at,bike_rides$started_at,units = "hours")
+bike_rides$ride_length_min<-difftime(bike_rides$ended_at,bike_rides$started_at,units = "mins")
+```
+
+#creating day_of_the_week fields
+
+```{r day of week, echo=FALSE}
+bike_rides$day_of_week_letter<-lubridate::wday(bike_rides$started_at,abbr = TRUE,label = TRUE)
+bike_rides$day_of_week_number<-lubridate::wday(bike_rides$started_at)
+```
+
+#summary of data
+
+```{r summary,echo=FALSE}
+skim_without_charts(bike_rides)
+```
+
+#removing na
+
+```{r remove na, echo=FALSE}
+bike_rides_no_na<-drop_na(bike_rides)
+rm(bike_rides)
+```
+
+#removing duplicates
+
+```{r removing duplicates,echo=FALSE}
+bike_rides_no_na<-distinct(bike_rides_no_na)
+```
+
+#removing negative ride length and quality check rows
+
+```{r check and remove rows,echo=FALSE}
+bike_rides_no_na_length_correct<-bike_rides_no_na %>% filter(ride_length_min>0)
+rm(bike_rides_no_na)
+rm(ds_01,ds_02,ds_03,ds_04,ds_05,ds_06,ds_07,ds_08,ds_09,ds_10,ds_11,ds_12)
+```
+
+#summary of final data
+
+```{r summary final data,echo=FALSE}
+skim_without_charts(bike_rides_no_na_length_correct)
+```
+
+#saving as csv
+
+```{r save as csv,echo=FALSE}
+write.csv(bike_rides_no_na_length_correct,"cyclistic_cleaned_dataset")
+```

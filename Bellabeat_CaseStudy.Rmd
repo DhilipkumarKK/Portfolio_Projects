@@ -1,0 +1,146 @@
+---
+title: "BellaBeat_Case_study"
+author: "Dhilipkumarkk"
+date: "2023-06-13"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This case study follows from the capstone project from the Google Data Analytics Course. I will be using the 6 step data analysis process for this case study: Ask, Prepare, Process, Analyze, Share and Act.
+
+##installing libraries
+
+```{r libraries}
+library("here")
+library("skimr")
+library("janitor")
+library("dplyr")
+library("tidyverse")
+```
+
+## creating data frames
+
+```{r data frames}
+setwd("C:/Users/kkdhi/Downloads/BellaBeat_Case_Study_2")
+daily_activity<-read.csv("dailyActivity_merged.csv")
+hourly_calories<-read.csv("hourlyCalories_merged.csv")
+hourly_intensities<-read.csv("hourlyIntensities_merged.csv")
+hourly_steps<-read.csv("hourlySteps_merged.csv")
+sleep_day<-read.csv("sleepDay_merged.csv")
+weight_log<-read.csv("weightLogInfo_merged.csv")
+```
+
+##merging daily activity dataset with sleep dataset
+
+```{r merging data sets}
+daily_activity_with_sleep<-merge(daily_activity,sleep_day,by="Id")
+daily_activity_with_wieght<-merge(daily_activity,weight_log,by="Id")
+```
+
+##creating summary statistics
+
+```{r summary statistics}
+daily_activity %>%  
+  select(TotalSteps,
+         TotalDistance,
+         SedentaryMinutes) %>%
+  summary()
+
+sleep_day %>%  
+  select(TotalSleepRecords,
+         TotalMinutesAsleep,
+         TotalTimeInBed) %>%
+  summary()
+
+hourly_calories %>%  
+  select(ActivityHour, Calories) %>%
+  summary()
+
+hourly_intensities %>%  
+  select(ActivityHour, TotalIntensity, AverageIntensity) %>%
+  summary()
+
+hourly_steps %>%  
+  select(ActivityHour, StepTotal) %>%
+  summary()
+
+weight_log %>%  
+  select(WeightKg, WeightPounds, Fat, BMI, IsManualReport) %>%
+  summary()
+```
+
+##converting activity date to weekdays
+
+```{r convert date}
+daily_activity <- daily_activity %>% mutate( Weekday = weekdays(as.Date(ActivityDate, "%m/%d/%Y")))
+daily_activity$weekday1 <- ordered(daily_activity$Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))
+activity_data <- daily_activity %>% 
+  group_by(Weekday) %>% 
+  summarize(count = n()) 
+```
+
+##plotting weekday activity_data
+
+```{r plot activity_data}
+ggplot(activity_data, aes(x=Weekday, y=count)) +
+  geom_bar(stat="identity",color="black",fill="purple") +
+  labs(title="Daily activity usage", x="Days", y="Count")
+```
+
+##plotting relationship between steps taken and sedentary minutes
+
+```{r plot realtionship}
+ggplot(data=daily_activity, aes(x=TotalSteps, y=SedentaryMinutes)) + 
+  geom_point(colour="purple", size=0.5)+geom_smooth(method="lm")+
+  labs(title="Relationship between total steps and sedentary minutes", x="Total steps", y="Sedentary minutes")
+```
+
+##plotting relationship between total steps taken and calories burnt
+
+```{r plot between step and calories}
+ggplot(data=daily_activity, aes(x=TotalSteps, y=Calories))+
+  geom_point(color="purple", size=0.5)+ 
+  labs(title="Relationship between total steps and calories burnt", x= "Total Steps",
+       y = "Calories")+ geom_smooth(method = 'loess', formula= 'y ~ x')
+```
+
+##plotting relationship between total minutes asleep and total time in bed
+
+```{r plot}
+ggplot(data=sleep_day, aes(x=TotalMinutesAsleep, y=TotalTimeInBed)) +
+  geom_point(colour="purple", size=0.5) +
+  labs(title="Relationship between time asleep and time in bed",x="Time Asleep",
+       y="Time in Bed") +geom_smooth(method="lm")
+```
+
+##finding the absolute number of people getting their recommended number of hours of sleep (7-9hours, 420-540min)
+
+```{r finding}
+daily_activity_with_sleep %>%
+  count(TotalMinutesAsleep < 420)
+daily_activity_with_sleep %>%
+  count(TotalMinutesAsleep > 540)
+```
+
+##changing time format for plotting
+
+```{r format}
+hourly_calories$ActivityHour <- parse_date_time(hourly_calories$ActivityHour,
+                                                "%m/%d/%Y %I:%M:%S %p")
+hourly_calories$date <- as.Date(hourly_calories$ActivityHour, format = "%d/%m/%Y")
+hourly_calories$time <- format(as.POSIXct(hourly_calories$ActivityHour), format = "%H:%M:%S")
+```
+
+##plotting hourly calories burnt
+
+```{r plot}
+ggplot(data=hourly_calories, aes(x=time, y= Calories)) + 
+  geom_histogram(stat = "identity", fill="purple") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title="Average calories burnt by the hour", x="Time", y="Calories")
+```
